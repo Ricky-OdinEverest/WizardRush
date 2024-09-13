@@ -56,8 +56,15 @@ public:
 	void MoveRight(float  Value);
 
 	// Aiming control functions
+	UFUNCTION(BlueprintCallable, Category = "Aiming")
 	void StartAiming();  // Function to start aiming
+	
+	UFUNCTION(BlueprintCallable, Category = "Aiming")
 	void StopAiming();   // Function to stop aiming
+	
+	// Blueprint getter function to check if aiming
+    UFUNCTION(BlueprintCallable, Category = "Aiming")
+    bool IsAiming() const { return bIsAiming; }
 
 
 	// Calculate the new yaw rotation based on mouse position
@@ -65,10 +72,15 @@ public:
 
 	private:
 	// Flag to indicate if the character is currently aiming
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Aiming", meta = (AllowPrivateAccess = "true"))
 	bool bIsAiming;
 	
 	// Cached direction from character to mouse position
     FVector CachedMouseDirection; 
+    
+    // Function to handle starting and stopping the repeating attack
+    void StartRepeatingAttack();
+    void StopRepeatingAttack();
 
 	
 	// Called to bind functionality to input

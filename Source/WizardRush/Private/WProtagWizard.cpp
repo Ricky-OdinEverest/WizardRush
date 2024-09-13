@@ -1,8 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "WProtagWizard.h"
-
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -73,13 +71,38 @@ void AWProtagWizard::StartAiming()
 	bIsAiming = true;
 	GetCharacterMovement()->bOrientRotationToMovement = false;  // Disable rotation to movement
 	bUseControllerRotationYaw = true;  // Use controller rotation when aiming
+	
+	// Set the character's speed to 300 while aiming
+    GetCharacterMovement()->MaxWalkSpeed = 300.0f;
+	
+	StartRepeatingAttack();  // Start the repeating attack
 }
+
+// Function to start the repeating attack
+void AWProtagWizard::StartRepeatingAttack()
+{
+    // Start a looping timer that calls PrimaryAttack_TimeElapsed every 0.5 seconds
+    GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &AWProtagWizard::PrimaryAttack_TimeElapsed, 0.3f, true);
+}
+
 
 void AWProtagWizard::StopAiming()
 {
 	bIsAiming = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;  // Enable rotation to movement
 	bUseControllerRotationYaw = false;  // Disable controller rotation when not aiming
+	
+	// Revert the character's speed back to 600 when not aiming
+    GetCharacterMovement()->MaxWalkSpeed = 600.0f;
+	
+	StopRepeatingAttack();  // Stop the repeating attack
+}
+
+// Function to stop the repeating attack
+void AWProtagWizard::StopRepeatingAttack()
+{
+    // Clear the repeating attack timer
+    GetWorldTimerManager().ClearTimer(TimerHandle_PrimaryAttack);
 }
 
 // Calculate the new rotation to face the mouse cursor
@@ -123,7 +146,7 @@ void AWProtagWizard::RotateCharacterToMouseCursor()
 void AWProtagWizard::PrimaryAttack()
 {
 
-	PlayAnimMontage(AttackAnim);
+	//PlayAnimMontage(AttackAnim);
 
 	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &AWProtagWizard::PrimaryAttack_TimeElapsed, 0.2f);
 
@@ -135,7 +158,7 @@ void AWProtagWizard::PrimaryAttack()
 void  AWProtagWizard:: PrimaryAttack_TimeElapsed()
 {
 
-	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+	FVector HandLocation = GetMesh()->GetSocketLocation("index_02_r");
 	
 	// Use the cached mouse direction calculated in RotateCharacterToMouseCursor
     FVector AimDirection = CachedMouseDirection;
