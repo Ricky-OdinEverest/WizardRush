@@ -32,6 +32,9 @@ protected:
     
    	UPROPERTY(VisibleAnywhere, BluePrintReadOnly)
    	UParticleSystemComponent* EffectComp;
+   	
+   	UPROPERTY(EditAnywhere, Category = "Attack")
+    float ProtagProjectileSpeed = 3000.0f;
 
 public:	
 	// Called every frame

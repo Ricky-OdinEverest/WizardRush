@@ -40,6 +40,8 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* CameraComp;
 	
+
+	
 	void PrimaryAttack_TimeElapsed();
     void PrimaryAttack();
 	
@@ -81,6 +83,17 @@ public:
     // Function to handle starting and stopping the repeating attack
     void StartRepeatingAttack();
     void StopRepeatingAttack();
+    
+    // Functions For Dash Mechanic   
+    void DashCharge();
+    void DashInitiate();
+    
+private:
+    float DashChargeTime;  // To track how long the dash input is held
+    const float MaxDashDistance = 5000.0f;  // Maximum distance to dash
+    
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dashing", meta = (AllowPrivateAccess = "true"))
+    bool bIsDashing;
 
 	
 	// Called to bind functionality to input

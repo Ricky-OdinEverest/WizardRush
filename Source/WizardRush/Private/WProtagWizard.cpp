@@ -24,8 +24,10 @@ AWProtagWizard::AWProtagWizard()
 	CameraComp->SetupAttachment(SpringArmComponent);
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
 
 	bIsAiming = false;  // Initialize the aiming flag to false
+	bIsDashing = false; // Initialize the aiming flag to false
 	
 
 }
@@ -82,7 +84,7 @@ void AWProtagWizard::StartAiming()
 void AWProtagWizard::StartRepeatingAttack()
 {
     // Start a looping timer that calls PrimaryAttack_TimeElapsed every 0.5 seconds
-    GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &AWProtagWizard::PrimaryAttack_TimeElapsed, 0.3f, true);
+    GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &AWProtagWizard::PrimaryAttack_TimeElapsed, 0.2f, true);
 }
 
 
@@ -126,7 +128,7 @@ void AWProtagWizard::RotateCharacterToMouseCursor()
 			FVector ProjectedMouseLocation = MouseLocation + T * MouseDirection;
 
 			// Debug: Print the projected mouse location to the log
-			UE_LOG(LogTemp, Warning, TEXT("Projected Mouse Location: X = %f, Y = %f, Z = %f"), ProjectedMouseLocation.X, ProjectedMouseLocation.Y, ProjectedMouseLocation.Z);
+			//UE_LOG(LogTemp, Warning, TEXT("Projected Mouse Location: X = %f, Y = %f, Z = %f"), ProjectedMouseLocation.X, ProjectedMouseLocation.Y, ProjectedMouseLocation.Z);
 
 			// Calculate direction to the projected mouse location
 			FVector DirectionToMouse = (ProjectedMouseLocation - CharacterLocation).GetSafeNormal();
@@ -158,7 +160,7 @@ void AWProtagWizard::PrimaryAttack()
 void  AWProtagWizard:: PrimaryAttack_TimeElapsed()
 {
 
-	FVector HandLocation = GetMesh()->GetSocketLocation("index_02_r");
+	FVector HandLocation = GetMesh()->GetSocketLocation("hand_r");
 	
 	// Use the cached mouse direction calculated in RotateCharacterToMouseCursor
     FVector AimDirection = CachedMouseDirection;
@@ -173,13 +175,50 @@ void  AWProtagWizard:: PrimaryAttack_TimeElapsed()
     SpawnParams.Instigator = this;
 	
 	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
+}
 
-	
-	
+void AWProtagWizard::DashCharge()
+{
+    bIsDashing = true;  // Start dash state
+     
+    // Stop movement but allow rotation
+    GetCharacterMovement()->MaxWalkSpeed = 0.0f;
+   // GetCharacterMovement()->bOrientRotationToMovement = false; // Disable rotation to movement
+    //bUseControllerRotationYaw = true; // Allow rotation using controller input
+    
+    // Increase the rotation rate for faster rotation during dash
+     GetCharacterMovement()->RotationRate = FRotator(0.0f, 1000.0f, 0.0f);  // Higher value for faster rotation
 
-
-
-
+    // Disable aiming and rotation to mouse
+    if (bIsAiming)
+    {
+        StopAiming();
+    }
+    
+    // Prevent RotateCharacterToMouseCursor from being called
+    bIsAiming = false;
+}
+void AWProtagWizard::DashInitiate()
+{
+    bIsDashing = false;  // End dashCharge state
+    // Calculate teleport distance based on DashChargeTime
+    float TeleportDistanceMultiplier = 1500.0f; // Adjust this to control how fast teleport distance increases
+    float TeleportDistance = FMath::Clamp(DashChargeTime * TeleportDistanceMultiplier, 1000.0f, MaxDashDistance);  // Adjust min and max values as needed
+    
+    // Determine the teleport target location
+    FVector ForwardDirection = GetActorForwardVector();
+    FVector StartLocation = GetActorLocation();
+    FVector TargetLocation = StartLocation + (ForwardDirection * TeleportDistance);
+    
+    // Perform the teleport by setting the character's location
+    SetActorLocation(TargetLocation, true);  // The 'true' parameter ensures that collisions are handled
+    
+    // Reset DashChargeTime after teleporting
+     DashChargeTime = 0.0f;
+     
+     
+    GetCharacterMovement()->MaxWalkSpeed = 600.0f;  // Reset speed
+    GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f); //Lower Rotation Speed
 }
 
 
@@ -194,6 +233,12 @@ void AWProtagWizard::Tick(float DeltaTime)
 	{
 		RotateCharacterToMouseCursor();
 	}
+	
+    // Update DashChargeTime if dashing
+    if (bIsDashing)
+     {
+        DashChargeTime += DeltaTime;  // Increment the charge time
+     }
 
 }
 
@@ -213,7 +258,9 @@ void AWProtagWizard::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	
 	PlayerInputComponent->BindAction("PrimaryAttack", IE_Pressed, this, &AWProtagWizard::PrimaryAttack);
 
-	
+	// Bind the DashCharge and DashInitiate functions to the input
+    PlayerInputComponent->BindAction("DashCharge", IE_Pressed, this, &AWProtagWizard::DashCharge);
+    PlayerInputComponent->BindAction("DashCharge", IE_Released, this, &AWProtagWizard::DashInitiate);
 
 	
 
